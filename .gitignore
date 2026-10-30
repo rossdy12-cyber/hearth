@@ -16,3 +16,4 @@ xcuserdata/
 # Desktop app
 desktop/node_modules/
 desktop/dist/
+!desktop/build/
