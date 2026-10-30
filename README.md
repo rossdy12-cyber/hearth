@@ -184,6 +184,30 @@ Download and install the newest build the same way. Your sign-ins are kept.
 
 ---
 
+## Play on… (use the iPhone as a remote)
+
+The iPhone can start a film or episode on Hearth for Windows/Ubuntu and then work as its remote. It goes through Jellyfin, so both devices just need to be signed in to the **same Jellyfin server**.
+
+1. On the computer, open Hearth and leave it running. Any page is fine. Hearth registers itself with Jellyfin as a device you can control.
+2. On the iPhone, open a film or show and tap **Play on…** next to the Play button.
+   You can also tap **Play on…** at the top of the iPhone video player to move what you're watching to the PC at the same point.
+3. Pick your computer from the list (for example **Windows PC · Hearth Desktop**). The video starts there in full screen.
+4. The **remote** screen opens on the iPhone with:
+   - play / pause, back 10 s, forward 30 s
+   - previous / next episode
+   - a seek bar showing the computer's live position
+   - volume and mute
+   - **Audio** and **Subtitles** menus to switch tracks
+   - **Stop**
+5. Close the remote with **Done**. To get it back, tap the 📡 remote icon at the top of any tab.
+
+Good to know:
+- **The Jellyfin web app** can control Hearth too. Click the cast icon at the top of the Jellyfin website and choose Hearth.
+- **Media keys** work on the computer: play/pause, next and previous on your keyboard, and the Windows media overlay or Ubuntu's sound menu, for both video and music.
+- **Music** from Navidrome can't be remote-controlled yet; only Jellyfin video can. That could be added later.
+
+---
+
 ## Troubleshooting
 
 | Problem | What to try |
@@ -194,6 +218,7 @@ Download and install the newest build the same way. Your sign-ins are kept.
 | A video spins or won't start | Hearth asks Jellyfin to convert files the iPhone can't play. That needs CPU on the NAS; give it a moment. Check the Jellyfin dashboard for errors. |
 | Hearth won't open after a week | Re-sign it with Sideloadly ("Every 7 days" above). |
 | Sideloadly can't see the iPhone | Re-install the Apple (not Microsoft Store) versions of iTunes/iCloud, unlock the phone, and tap Trust. |
+| Computer not listed under "Play on…" | Make sure Hearth is open on the computer and signed in to the same Jellyfin server as the phone. Wait a few seconds and pull down to refresh the list. |
 | GitHub build has a red cross | Click the failed run and open the red step to see the error. |
 
 ---

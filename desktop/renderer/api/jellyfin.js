@@ -230,20 +230,25 @@ export class Jellyfin {
    * Asks Jellyfin how to play an item on this device. Files Chromium can play are streamed
    * as they are; everything else comes from Jellyfin's HLS transcoder (master.m3u8).
    */
-  async playbackSource(itemId) {
+  async playbackSource(itemId, { audioStreamIndex, subtitleStreamIndex, forceTranscode = false } = {}) {
+    const choose = {};
+    if (audioStreamIndex != null) choose.AudioStreamIndex = audioStreamIndex;
+    if (subtitleStreamIndex != null) choose.SubtitleStreamIndex = subtitleStreamIndex;
     const info = await this.call(`/Items/${itemId}/PlaybackInfo`, {
       method: 'POST',
-      query: { userId: this.user },
+      query: { userId: this.user, ...choose },
       body: {
         UserId: this.user,
         MaxStreamingBitrate: 120_000_000,
         AutoOpenLiveStream: true,
-        EnableDirectPlay: true,
-        EnableDirectStream: true,
+        // A non-default audio track or a burned-in subtitle needs the server to re-encode.
+        EnableDirectPlay: !forceTranscode,
+        EnableDirectStream: !forceTranscode,
         EnableTranscoding: true,
         AllowVideoStreamCopy: true,
         AllowAudioStreamCopy: true,
-        DeviceProfile: DEVICE_PROFILE
+        DeviceProfile: DEVICE_PROFILE,
+        ...choose
       }
     });
     const source = info?.MediaSources?.[0];
@@ -251,8 +256,9 @@ export class Jellyfin {
     const playSessionId = info.PlaySessionId ?? randomHex(16);
     const mediaSourceId = source.Id ?? itemId;
     const token = this.session.accessToken;
+    const streams = source.MediaStreams ?? [];
 
-    const subtitles = (source.MediaStreams ?? [])
+    const subtitles = streams
       .filter((stream) => stream.Type === 'Subtitle' && stream.DeliveryMethod === 'External' && stream.DeliveryUrl)
       .map((stream) => ({
         index: stream.Index,
@@ -262,7 +268,14 @@ export class Jellyfin {
         isDefault: stream.Index === source.DefaultSubtitleStreamIndex
       }));
 
-    const base = { mediaSourceId, playSessionId, subtitles };
+    const base = {
+      mediaSourceId,
+      playSessionId,
+      subtitles,
+      defaultAudioIndex: source.DefaultAudioStreamIndex ?? null,
+      defaultSubtitleIndex: source.DefaultSubtitleStreamIndex ?? -1,
+      subtitleIndexes: streams.filter((stream) => stream.Type === 'Subtitle').map((stream) => stream.Index)
+    };
 
     if (source.SupportsDirectPlay) {
       return {
@@ -290,7 +303,8 @@ export class Jellyfin {
     };
   }
 
-  progressBody(source, itemId, positionTicks, isPaused) {
+  /** `extra` carries live state for remote controllers: volume, mute, chosen tracks, queue. */
+  progressBody(source, itemId, positionTicks, isPaused, extra = {}) {
     return {
       ItemId: itemId,
       MediaSourceId: source.mediaSourceId,
@@ -298,16 +312,54 @@ export class Jellyfin {
       PositionTicks: Math.max(0, Math.round(positionTicks)),
       PlayMethod: source.playMethod,
       CanSeek: true,
-      IsPaused: isPaused
+      IsPaused: isPaused,
+      ...extra
     };
   }
 
-  reportStart(source, itemId, positionTicks) {
-    return this.call('/Sessions/Playing', { method: 'POST', body: this.progressBody(source, itemId, positionTicks, false) }).catch(() => {});
+  reportStart(source, itemId, positionTicks, extra) {
+    return this.call('/Sessions/Playing', { method: 'POST', body: this.progressBody(source, itemId, positionTicks, false, extra) }).catch(() => {});
   }
 
-  reportProgress(source, itemId, positionTicks, isPaused) {
-    return this.call('/Sessions/Playing/Progress', { method: 'POST', body: this.progressBody(source, itemId, positionTicks, isPaused) }).catch(() => {});
+  reportProgress(source, itemId, positionTicks, isPaused, extra) {
+    return this.call('/Sessions/Playing/Progress', { method: 'POST', body: this.progressBody(source, itemId, positionTicks, isPaused, extra) }).catch(() => {});
+  }
+
+  // ---- Remote control ("Play on…") ----
+
+  async itemsByIds(ids) {
+    const items = await this.items('/Items', { userId: this.user, Ids: ids.join(','), Fields: LIST_FIELDS });
+    const byId = new Map(items.map((item) => [item.Id, item]));
+    return ids.map((id) => byId.get(id)).filter(Boolean);
+  }
+
+  seriesEpisodes(seriesId) {
+    return this.items(`/Shows/${seriesId}/Episodes`, { userId: this.user });
+  }
+
+  socketURL() {
+    const url = new URL(`${this.base}/socket`);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    url.searchParams.set('api_key', this.session.accessToken);
+    url.searchParams.set('deviceId', deviceId());
+    return url.toString();
+  }
+
+  /** Tells Jellyfin this app can be controlled from other devices. */
+  postCapabilities() {
+    return this.call('/Sessions/Capabilities/Full', {
+      method: 'POST',
+      body: {
+        PlayableMediaTypes: ['Video'],
+        SupportedCommands: [
+          'Play', 'PlayState', 'PlayNext', 'PlayMediaSource',
+          'SetVolume', 'VolumeUp', 'VolumeDown', 'Mute', 'Unmute', 'ToggleMute',
+          'SetAudioStreamIndex', 'SetSubtitleStreamIndex', 'DisplayMessage', 'ToggleFullscreen'
+        ],
+        SupportsMediaControl: true,
+        SupportsPersistentIdentifier: true
+      }
+    });
   }
 
   async reportStopped(source, itemId, positionTicks) {

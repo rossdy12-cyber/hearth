@@ -9,6 +9,29 @@ extension Notification.Name {
 /// The system video player, with a hook for when the person closes it.
 final class HearthPlayerViewController: AVPlayerViewController {
     var onClose: (() -> Void)?
+    /// "Play on…": hand the video over to another device.
+    var onPlayElsewhere: (() -> Void)?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        var config = UIButton.Configuration.filled()
+        config.title = "Play on…"
+        config.image = UIImage(systemName: "tv")
+        config.imagePadding = 6
+        config.cornerStyle = .capsule
+        config.baseBackgroundColor = UIColor.black.withAlphaComponent(0.55)
+        config.baseForegroundColor = .white
+        config.buttonSize = .small
+        let button = UIButton(configuration: config, primaryAction: UIAction { [weak self] _ in
+            self?.onPlayElsewhere?()
+        })
+        button.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(button)
+        NSLayoutConstraint.activate([
+            button.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+            button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8)
+        ])
+    }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
@@ -111,6 +134,15 @@ final class VideoPlayback: ObservableObject {
         controller.modalPresentationStyle = .fullScreen
         controller.onClose = { [weak self] in
             self?.finish(client: client, source: source, itemId: itemId)
+        }
+        let handOffItem = target
+        controller.onPlayElsewhere = { [weak controller, weak player] in
+            let seconds = player?.currentTime().seconds ?? 0
+            let ticks = seconds.isFinite ? Int64(seconds * 10_000_000) : 0
+            player?.pause()
+            controller?.dismiss(animated: true) {
+                RemoteController.shared.offer(handOffItem, startTicks: ticks)
+            }
         }
 
         guard let presenter = UIApplication.shared.topViewController else {

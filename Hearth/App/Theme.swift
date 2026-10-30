@@ -46,6 +46,7 @@ struct HearthLogo: View {
 /// Black navigation bar with the logo on the left and a settings gear on the right.
 struct HearthChrome: ViewModifier {
     @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject private var accounts: AccountStore
 
     func body(content: Content) -> some View {
         content
@@ -58,13 +59,24 @@ struct HearthChrome: ViewModifier {
                     HearthLogo()
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        router.showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundStyle(.white)
+                    HStack(spacing: 18) {
+                        if accounts.jellyfin != nil {
+                            Button {
+                                RemoteController.shared.openRemote()
+                            } label: {
+                                Image(systemName: "dot.radiowaves.left.and.right")
+                                    .foregroundStyle(.white)
+                            }
+                            .accessibilityLabel("Remote control")
+                        }
+                        Button {
+                            router.showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .foregroundStyle(.white)
+                        }
+                        .accessibilityLabel("Settings")
                     }
-                    .accessibilityLabel("Settings")
                 }
             }
     }

@@ -196,6 +196,52 @@ final class JellyfinClient: @unchecked Sendable {
         ])
     }
 
+    // MARK: - Remote control ("Play on…")
+
+    private func allSessions() async throws -> [JFSession] {
+        let data = try await send("/Sessions", query: [queryItem("ControllableByUserId", session.userId)])
+        return try Self.decoder.decode([JFSession].self, from: data)
+    }
+
+    /// Other devices that can play video and accept remote commands.
+    func controllableSessions() async throws -> [JFSession] {
+        try await allSessions().filter {
+            $0.deviceId != Self.deviceId
+                && ($0.supportsRemoteControl ?? false)
+                && ($0.playableMediaTypes ?? []).contains("Video")
+        }
+    }
+
+    func remoteSession(id: String) async throws -> JFSession? {
+        try await allSessions().first { $0.id == id }
+    }
+
+    func playOn(sessionId: String, itemIds: [String], startTicks: Int64) async throws {
+        _ = try await send("/Sessions/\(sessionId)/Playing", query: [
+            queryItem("playCommand", "PlayNow"),
+            queryItem("itemIds", itemIds.joined(separator: ",")),
+            queryItem("startPositionTicks", String(startTicks))
+        ], method: "POST")
+    }
+
+    /// command: Pause, Unpause, PlayPause, Stop, Seek, NextTrack, PreviousTrack
+    func sendPlaystate(sessionId: String, _ command: String, seekTicks: Int64? = nil) async throws {
+        var query: [URLQueryItem] = []
+        if let seekTicks {
+            query.append(queryItem("seekPositionTicks", String(max(0, seekTicks))))
+        }
+        _ = try await send("/Sessions/\(sessionId)/Playing/\(command)", query: query, method: "POST")
+    }
+
+    /// name: SetVolume, Mute, Unmute, ToggleMute, SetAudioStreamIndex, SetSubtitleStreamIndex, DisplayMessage
+    func sendCommand(sessionId: String, _ name: String, arguments: [String: String] = [:]) async throws {
+        _ = try await send("/Sessions/\(sessionId)/Command", method: "POST", body: ["Name": name, "Arguments": arguments])
+    }
+
+    func itemWithStreams(_ id: String) async throws -> JFItem? {
+        try await items("/Items", [user, queryItem("Ids", id), queryItem("Fields", "MediaStreams")]).first
+    }
+
     // MARK: - Images
 
     func imageURL(_ itemId: String, _ type: String, maxWidth: Int, tag: String? = nil) -> URL? {

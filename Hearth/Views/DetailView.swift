@@ -116,13 +116,21 @@ struct DetailView: View {
 
     private func playSection(_ client: JellyfinClient) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Button {
-                playback.start(playTarget ?? shown, client: client)
-            } label: {
-                PillLabel(title: playTitle, systemImage: "play.fill")
+            HStack(spacing: 10) {
+                Button {
+                    playback.start(playTarget ?? shown, client: client)
+                } label: {
+                    PillLabel(title: playTitle, systemImage: "play.fill")
+                }
+                .disabled(playback.isPreparing)
+                Button {
+                    RemoteController.shared.offer(playTarget ?? shown)
+                } label: {
+                    PillLabel(title: "Play on…", systemImage: "tv", prominent: false)
+                }
+                .frame(maxWidth: 150)
             }
             .buttonStyle(.plain)
-            .disabled(playback.isPreparing)
 
             if let progress = playTarget?.progress, !(playTarget?.isPlayed ?? false) {
                 ProgressBar(value: progress)

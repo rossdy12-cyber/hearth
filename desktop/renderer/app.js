@@ -1,6 +1,7 @@
 // Hearth desktop: app shell, router, click handling and the music player bar.
 import { Jellyfin } from './api/jellyfin.js';
 import { Subsonic } from './api/subsonic.js';
+import { startRemoteSession } from './player/remote.js';
 import { isVideoActive, playItem } from './player/video.js';
 import { audio, itemCache, songLists, state } from './state.js';
 import { esc, formatTime, icons, spinner, toast } from './ui.js';
@@ -20,6 +21,8 @@ async function applyAccounts(accounts) {
   state.nd = state.accounts.navidrome ? await Subsonic.create(state.accounts.navidrome) : null;
   if (!state.nd) audio.stop();
   audio.client = state.nd;
+  // Lets the iPhone or the Jellyfin web app control this computer ("Play on…").
+  startRemoteSession(state.jf);
 }
 
 async function onAccountsChanged(accounts) {

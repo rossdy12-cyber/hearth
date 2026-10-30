@@ -27,6 +27,8 @@ struct JFItem: Decodable, Identifiable, Hashable, Sendable {
     let parentBackdropItemId: String?
     let imageTags: JFImageTags?
     let userData: JFUserData?
+    /// Only filled when asked for with `Fields=MediaStreams` (remote audio/subtitle pickers).
+    let mediaStreams: [JFMediaStream]?
 
     static func == (lhs: JFItem, rhs: JFItem) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
@@ -104,6 +106,46 @@ struct JFPlaybackSource: Sendable {
     let mediaSourceId: String
     let playSessionId: String
     let playMethod: String
+}
+
+struct JFMediaStream: Decodable, Hashable, Sendable {
+    let index: Int
+    let type: String?
+    let displayTitle: String?
+    let language: String?
+
+    var label: String { displayTitle ?? language ?? "Track \(index)" }
+}
+
+/// Another device signed in to Jellyfin (Hearth on a PC, the Jellyfin web app, a TV...).
+struct JFSession: Decodable, Identifiable, Sendable {
+    let id: String
+    let deviceId: String?
+    let deviceName: String?
+    let client: String?
+    let supportsRemoteControl: Bool?
+    let playableMediaTypes: [String]?
+    let nowPlayingItem: JFItem?
+    let playState: JFPlayState?
+
+    var displayName: String { deviceName ?? client ?? "Device" }
+
+    var systemImage: String {
+        let name = (client ?? "").lowercased()
+        if name.contains("hearth desktop") { return "desktopcomputer" }
+        if name.contains("web") { return "globe" }
+        if name.contains("android") || name.contains("ios") || name.contains("hearth") { return "iphone" }
+        return "tv"
+    }
+}
+
+struct JFPlayState: Decodable, Sendable {
+    let positionTicks: Int64?
+    let isPaused: Bool?
+    let isMuted: Bool?
+    let volumeLevel: Int?
+    let audioStreamIndex: Int?
+    let subtitleStreamIndex: Int?
 }
 
 struct JFGenreRow: Identifiable, Sendable {

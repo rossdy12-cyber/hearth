@@ -9,6 +9,7 @@ struct RootView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var audio: AudioPlayer
     @ObservedObject private var playback = VideoPlayback.shared
+    @ObservedObject private var remote = RemoteController.shared
     @State private var tab: Tab = .home
 
     var body: some View {
@@ -40,6 +41,23 @@ struct RootView: View {
                 .environmentObject(accounts)
                 .environmentObject(audio)
                 .preferredColorScheme(.dark)
+        }
+        .sheet(item: $remote.sheet) { sheet in
+            Group {
+                if let client = accounts.jellyfinClient {
+                    switch sheet {
+                    case .picker:
+                        SessionPickerView(client: client)
+                    case .remote:
+                        RemoteControlView(client: client)
+                    }
+                } else {
+                    SignInPrompt(service: "Jellyfin", systemImage: "tv",
+                                 message: "Sign in to Jellyfin to control other devices.")
+                }
+            }
+            .environmentObject(router)
+            .preferredColorScheme(.dark)
         }
         .overlay {
             if playback.isPreparing {

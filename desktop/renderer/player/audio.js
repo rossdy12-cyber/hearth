@@ -4,6 +4,8 @@ export class AudioPlayer extends EventTarget {
   constructor() {
     super();
     this.client = null;
+    /** Set by the video player while a video is open, so media keys control the video. */
+    this.override = null;
     this.queue = [];
     this.index = 0;
     this.el = new Audio();
@@ -149,24 +151,26 @@ export class AudioPlayer extends EventTarget {
           // Unsupported action on this platform.
         }
       };
-      on('play', () => this.resume());
-      on('pause', () => this.pause());
-      on('previoustrack', () => this.previous());
-      on('nexttrack', () => this.next());
-      on('seekto', (details) => this.seek(details.seekTime));
-      on('stop', () => this.pause());
+      // While a video is open, override (the video player) gets the keys instead.
+      on('play', () => (this.override ? this.override.unpause() : this.resume()));
+      on('pause', () => (this.override ? this.override.pause() : this.pause()));
+      on('previoustrack', () => (this.override ? this.override.previous() : this.previous()));
+      on('nexttrack', () => (this.override ? this.override.next() : this.next()));
+      on('seekto', (details) => (this.override ? this.override.seekTicks(details.seekTime * 10_000_000) : this.seek(details.seekTime)));
+      on('stop', () => (this.override ? this.override.stop() : this.pause()));
     } else if (window.hearth?.registerMediaKeys) {
       window.hearth.registerMediaKeys();
       window.hearth.onMediaKey((action) => {
-        if (action === 'toggle') this.toggle();
-        if (action === 'next') this.next();
-        if (action === 'previous') this.previous();
+        const target = this.override;
+        if (action === 'toggle') (target ? target.playPause() : this.toggle());
+        if (action === 'next') (target ? target.next() : this.next());
+        if (action === 'previous') (target ? target.previous() : this.previous());
       });
     }
   }
 
   updateMediaSession() {
-    if (!('mediaSession' in navigator)) return;
+    if (!('mediaSession' in navigator) || this.override) return;
     const song = this.current;
     if (!song) {
       navigator.mediaSession.metadata = null;
