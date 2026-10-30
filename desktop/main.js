@@ -52,7 +52,7 @@ function saveAccounts(accounts) {
 
 function resolveAsset(urlPath) {
   if (urlPath === '/vendor/hls.min.js') {
-    return require.resolve('hls.js/dist/hls.min.js');
+    return path.join(__dirname, 'node_modules', 'hls.js', 'dist', 'hls.min.js');
   }
   const file = path.normalize(path.join(RENDERER_DIR, urlPath));
   if (!file.startsWith(RENDERER_DIR)) return null;
@@ -106,6 +106,11 @@ function createWindow() {
   if (process.env.HEARTH_SCREENSHOT) {
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(async () => {
+        // Optional: run a step (e.g. click the first poster) before capturing.
+        if (process.env.HEARTH_SCREENSHOT_STEP) {
+          await mainWindow.webContents.executeJavaScript(process.env.HEARTH_SCREENSHOT_STEP).catch(() => {});
+          await new Promise((resolve) => setTimeout(resolve, Number(process.env.HEARTH_SCREENSHOT_STEP_WAIT || 4000)));
+        }
         const image = await mainWindow.webContents.capturePage();
         fs.writeFileSync(process.env.HEARTH_SCREENSHOT, image.toPNG());
         app.quit();

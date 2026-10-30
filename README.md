@@ -1,4 +1,4 @@
-﻿# Hearth
+# Hearth
 
 Hearth is a home-cinema app for iPhone that brings your own servers together in one place:
 
