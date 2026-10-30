@@ -24,6 +24,7 @@
     "appId": "app.hearth.desktop",
     "productName": "Hearth",
     "copyright": "Hearth",
+    "publish": null,
     "directories": {
       "output": "dist",
       "buildResources": "build"
