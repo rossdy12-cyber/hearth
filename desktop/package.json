@@ -1,0 +1,64 @@
+﻿{
+  "name": "hearth-desktop",
+  "productName": "Hearth",
+  "version": "1.0.0",
+  "description": "Hearth for Windows and Linux: one app for your Jellyfin and Navidrome servers.",
+  "author": "Hearth",
+  "license": "MIT",
+  "homepage": "https://github.com/rossdy12-cyber/hearth",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
+  },
+  "dependencies": {
+    "hls.js": "1.7.3"
+  },
+  "devDependencies": {
+    "electron": "44.7.2",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "app.hearth.desktop",
+    "productName": "Hearth",
+    "copyright": "Hearth",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "node_modules/hls.js/dist/hls.min.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Hearth-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "AudioVideo",
+      "icon": "build/icon.png",
+      "maintainer": "Hearth <hearth@users.noreply.github.com>",
+      "synopsis": "Jellyfin and Navidrome in one app",
+      "artifactName": "Hearth-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "depends": ["libsecret-1-0"]
+    }
+  }
+}

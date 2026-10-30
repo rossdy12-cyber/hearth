@@ -12,3 +12,7 @@ xcuserdata/
 
 # Local tool settings
 .claude/
+
+# Desktop app
+desktop/node_modules/
+desktop/dist/

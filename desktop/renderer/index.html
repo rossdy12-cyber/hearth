@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' http: https: data: blob:; media-src 'self' http: https: blob:; connect-src 'self' http: https:; worker-src 'self' blob:">
+  <title>Hearth</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="topnav" class="topnav"></header>
+  <main id="view"></main>
+  <footer id="player-bar" class="player-bar" hidden></footer>
+  <div id="now-playing" class="now-playing"></div>
+  <script src="vendor/hls.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

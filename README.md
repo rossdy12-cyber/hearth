@@ -10,6 +10,8 @@ Hearth only connects to your own servers, over Tailscale. It has no accounts or 
 
 You don't need a Mac or a paid Apple developer account. GitHub builds the app for you in the cloud, and **Sideloadly** installs it on your iPhone with your normal (free) Apple ID.
 
+There's also a **desktop version for Windows and Ubuntu**. See [Hearth on Windows and Ubuntu](#hearth-on-windows-and-ubuntu) near the end.
+
 ---
 
 ## What you need
@@ -145,6 +147,43 @@ When the code changes (for example after a fix), upload the new files to GitHub 
 
 ---
 
+## Hearth on Windows and Ubuntu
+
+The `desktop` folder holds a desktop version of Hearth with the same look: the big banner, poster rows, title pages with seasons and episodes, Music, and Search. Videos play full screen (press **F** to switch full screen, **Esc** to go back, **Space** to pause, **←/→** to skip 10 seconds). Music plays in a bar at the bottom, and your keyboard's media keys work. Progress syncs with Jellyfin, so you can stop a film on the PC and resume it on the iPhone.
+
+The desktop version doesn't need Sideloadly and never expires.
+
+### Download it
+
+1. In your GitHub repo, open **Actions** and click **Build desktop apps** on the left.
+   (It runs by itself whenever anything in `desktop/` changes. To start it by hand, click **Run workflow**.)
+2. Click the latest green run and scroll to **Artifacts**:
+   - **Hearth-Windows** contains `Hearth-Setup-1.0.0.exe`.
+   - **Hearth-Linux** contains `Hearth-1.0.0-x86_64.AppImage` and `Hearth-1.0.0-amd64.deb`.
+3. Download the one you need and extract the zip.
+
+### Install on Windows
+
+1. Double-click `Hearth-Setup-1.0.0.exe`.
+2. Windows may show **"Windows protected your PC"**, because the app isn't signed with a paid certificate. Click **More info**, then **Run anyway**. You only see this once.
+3. Follow the installer. Hearth appears in the Start menu.
+
+### Install on Ubuntu
+
+Either:
+- **.deb (recommended):** double-click `Hearth-1.0.0-amd64.deb` and click **Install**, or run `sudo apt install ./Hearth-1.0.0-amd64.deb` in a terminal. Hearth appears in your app list.
+- **AppImage (no install):** right-click the `.AppImage` → **Properties** → **Permissions** → tick **Allow executing file as program**, then double-click it. On Ubuntu 22.04 and newer you may first need `sudo apt install libfuse2`.
+
+### Sign in
+
+The first time it opens, Hearth shows Settings. Enter the same addresses as on the iPhone (Step 0), with your usernames and passwords, and make sure Tailscale is connected on the computer. Sign-ins are encrypted with Windows' or Ubuntu's own secure storage.
+
+### Updating
+
+Download and install the newest build the same way. Your sign-ins are kept.
+
+---
+
 ## Troubleshooting
 
 | Problem | What to try |
@@ -167,3 +206,8 @@ When the code changes (for example after a fix), upload the new files to GitHub 
   - `Jellyfin/`: sign-in via `/Users/AuthenticateByName`, browsing, artwork, and `PlaybackInfo` with an iPhone device profile. Compatible files play directly; anything else comes from Jellyfin's HLS transcoder (`/Videos/{id}/master.m3u8`). Progress goes to `/Sessions/Playing*`, which is what powers Continue Watching and resume.
   - `Navidrome/`: Subsonic API with token + salt auth (`t = md5(password + salt)`), the AVPlayer music queue, and lock-screen controls via `MPNowPlayingInfoCenter` and `MPRemoteCommandCenter`.
   - `Info.plist` (generated from `project.yml`) allows plain-http connections, because Tailscale addresses use http, and turns on background audio.
+- `desktop/`: the Electron app for Windows and Linux, with no framework or bundler.
+  - `main.js` serves the UI from a private `hearth://` scheme and stores sign-ins encrypted with Electron `safeStorage`.
+  - `renderer/` is the UI in plain HTML, CSS and JavaScript modules. Transcoded video streams play through hls.js.
+  - `.github/workflows/build-desktop.yml` builds the Windows NSIS installer and the Linux AppImage and .deb with electron-builder.
+  - To run it locally: `cd desktop`, `npm install`, `npm start`.
