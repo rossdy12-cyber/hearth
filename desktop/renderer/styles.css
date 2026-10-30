@@ -303,6 +303,9 @@ input[type=range] { accent-color: var(--accent); cursor: pointer; }
 .np-art { width: min(52vh, 100%); aspect-ratio: 1; border-radius: 10px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.7); }
 .np-info h1 { font-size: clamp(28px, 3vw, 44px); font-weight: 900; margin-bottom: 6px; }
 .np-artist { color: #d4d4d8; font-size: 18px; }
+.format-badge { display: inline-block; margin-top: 12px; padding: 3px 10px; border: 1px solid rgba(255,176,46,.6); border-radius: 999px; color: var(--accent); font-size: 13px; font-weight: 600; }
+.format-badge:empty { display: none; }
+.pb-format { color: var(--accent); font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .np-queue { display: flex; flex-direction: column; min-height: 0; }
 .np-queue h2 { font-size: 18px; margin-bottom: 12px; }
 .np-list { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-right: 8px; }

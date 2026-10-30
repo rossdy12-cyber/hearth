@@ -124,6 +124,15 @@ struct NowPlayingView: View {
                             .font(.subheadline)
                             .foregroundStyle(Theme.secondaryText)
                             .lineLimit(1)
+                        if !audio.streamDescription.isEmpty {
+                            Text(audio.streamDescription)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Theme.accent)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .overlay(Capsule().stroke(Theme.accent.opacity(0.6), lineWidth: 1))
+                                .padding(.top, 4)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 

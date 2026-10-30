@@ -97,12 +97,33 @@ final class SubsonicClient: @unchecked Sendable {
 
     private static let nativeFormats: Set<String> = ["mp3", "m4a", "aac", "alac", "flac", "wav", "aif", "aiff", "caf", "mp4", "m4b"]
 
-    /// Formats iOS can't decode (ogg, opus, wma...) are converted to mp3 by Navidrome.
-    func streamURL(for song: SubsonicSong) -> URL? {
+    /// The bitrate Navidrome will convert to, or nil when the original file is streamed.
+    /// Formats iOS can't decode (ogg, opus, wma...) are always converted.
+    static func conversionBitRate(for song: SubsonicSong, maxBitRate: Int?) -> Int? {
+        let suffix = song.suffix?.lowercased() ?? ""
+        let playable = suffix.isEmpty || nativeFormats.contains(suffix)
+        guard let maxBitRate else { return playable ? nil : 320 }
+        // An MP3 that is already at or below the limit is sent as it is.
+        if suffix == "mp3", let kbps = song.bitRate, kbps > 0, kbps <= maxBitRate { return nil }
+        return maxBitRate
+    }
+
+    func streamURL(for song: SubsonicSong, maxBitRate: Int?) -> URL? {
         var params = [queryItem("id", song.id)]
-        if let suffix = song.suffix?.lowercased(), !Self.nativeFormats.contains(suffix) {
-            params += [queryItem("format", "mp3"), queryItem("maxBitRate", "320")]
+        if let kbps = Self.conversionBitRate(for: song, maxBitRate: maxBitRate) {
+            params += [queryItem("format", "mp3"), queryItem("maxBitRate", String(kbps))]
+        } else {
+            params.append(queryItem("format", "raw"))
         }
         return url("stream", params)
+    }
+
+    /// What is actually being streamed, e.g. "FLAC · 24-bit/44.1 kHz" or "MP3 · 256 kbps (from FLAC)".
+    static func streamDescription(for song: SubsonicSong, maxBitRate: Int?) -> String {
+        guard let kbps = conversionBitRate(for: song, maxBitRate: maxBitRate) else {
+            return song.sourceFormatDescription
+        }
+        let source = (song.suffix ?? "").uppercased()
+        return source.isEmpty ? "MP3 · \(kbps) kbps" : "MP3 · \(kbps) kbps (from \(source))"
     }
 }

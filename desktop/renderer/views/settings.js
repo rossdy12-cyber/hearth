@@ -1,6 +1,6 @@
 // Server addresses and accounts for Jellyfin and Navidrome.
 import { Jellyfin } from '../api/jellyfin.js';
-import { Subsonic } from '../api/subsonic.js';
+import { MUSIC_QUALITIES, Subsonic, savedMusicQuality } from '../api/subsonic.js';
 import { state } from '../state.js';
 import { esc } from '../ui.js';
 
@@ -54,6 +54,13 @@ export function settingsView({ onAccountsChanged }) {
         ${card('jellyfin')}
         ${card('navidrome')}
         <section class="settings-card">
+          <h2>Music quality</h2>
+          <p class="muted small">Original plays your files as they are, so FLAC stays lossless. The kbps options are converted to MP3 by Navidrome and use less bandwidth. Applies from the next song.</p>
+          <select id="music-quality">
+            ${MUSIC_QUALITIES.map((quality) => `<option value="${quality.value}" ${quality.value === savedMusicQuality().value ? 'selected' : ''}>${esc(quality.label)}</option>`).join('')}
+          </select>
+        </section>
+        <section class="settings-card">
           <h2>About</h2>
           <p class="muted small">Hearth only talks to your own servers. Make sure Tailscale is connected on this computer.
           Sign-ins are encrypted with ${window.hearth.platform === 'win32' ? 'Windows' : 'your system’s'} secure storage.
@@ -61,6 +68,9 @@ export function settingsView({ onAccountsChanged }) {
         </section>
       </div>`,
     mount(root) {
+      root.querySelector('#music-quality').addEventListener('change', (event) => {
+        localStorage.setItem('hearth.musicQuality', event.target.value);
+      });
       root.addEventListener('submit', async (event) => {
         const form = event.target.closest('form[data-signin]');
         if (!form) return;

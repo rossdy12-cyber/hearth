@@ -96,13 +96,60 @@ export class Subsonic {
     return coverArtId ? this.url('getCoverArt', { id: coverArtId, size }) : null;
   }
 
-  streamURL(song) {
-    const suffix = String(song.suffix ?? '').toLowerCase();
-    const params = { id: song.id };
-    if (suffix && !NATIVE_FORMATS.has(suffix)) {
-      params.format = 'mp3';
-      params.maxBitRate = 320;
-    }
-    return this.url('stream', params);
+  /** maxBitRate: null streams the original file (FLAC stays FLAC); a number converts to MP3. */
+  streamURL(song, maxBitRate = null) {
+    const kbps = conversionBitRate(song, maxBitRate);
+    return this.url('stream', kbps ? { id: song.id, format: 'mp3', maxBitRate: kbps } : { id: song.id, format: 'raw' });
   }
+}
+
+export const MUSIC_QUALITIES = [
+  { value: 'original', label: 'Original (lossless)', maxBitRate: null },
+  { value: '320', label: '320 kbps', maxBitRate: 320 },
+  { value: '256', label: '256 kbps', maxBitRate: 256 },
+  { value: '192', label: '192 kbps', maxBitRate: 192 },
+  { value: '128', label: '128 kbps', maxBitRate: 128 }
+];
+
+export function savedMusicQuality() {
+  const value = localStorage.getItem('hearth.musicQuality') ?? 'original';
+  return MUSIC_QUALITIES.find((quality) => quality.value === value) ?? MUSIC_QUALITIES[0];
+}
+
+/** The bitrate Navidrome will convert to, or null when the original file is streamed. */
+export function conversionBitRate(song, maxBitRate) {
+  const suffix = String(song.suffix ?? '').toLowerCase();
+  const playable = !suffix || NATIVE_FORMATS.has(suffix);
+  if (!maxBitRate) return playable ? null : 320;
+  // An MP3 already at or below the limit is sent as it is.
+  if (suffix === 'mp3' && song.bitRate > 0 && song.bitRate <= maxBitRate) return null;
+  return maxBitRate;
+}
+
+const LOSSLESS = new Set(['flac', 'alac', 'wav', 'aif', 'aiff', 'ape', 'wv', 'dsf', 'dff']);
+
+function isLossless(song) {
+  const suffix = String(song.suffix ?? '').toLowerCase();
+  return LOSSLESS.has(suffix) || (suffix === 'm4a' && song.bitRate > 500);
+}
+
+/** e.g. "FLAC · 24-bit/44.1 kHz" or "MP3 · 320 kbps". */
+export function sourceFormat(song) {
+  const suffix = String(song.suffix ?? 'audio').toLowerCase();
+  const name = suffix === 'm4a' ? (isLossless(song) ? 'ALAC' : 'AAC') : suffix.toUpperCase();
+  if (isLossless(song)) {
+    const detail = [];
+    if (song.bitDepth > 0) detail.push(`${song.bitDepth}-bit`);
+    if (song.samplingRate > 0) detail.push(`${+(song.samplingRate / 1000).toFixed(1)} kHz`);
+    return detail.length ? `${name} · ${detail.join('/')}` : name;
+  }
+  return song.bitRate > 0 ? `${name} · ${song.bitRate} kbps` : name;
+}
+
+/** What is actually streaming, e.g. "MP3 · 256 kbps (from FLAC)". */
+export function streamFormat(song, maxBitRate) {
+  const kbps = conversionBitRate(song, maxBitRate);
+  if (!kbps) return sourceFormat(song);
+  const source = String(song.suffix ?? '').toUpperCase();
+  return source ? `MP3 · ${kbps} kbps (from ${source})` : `MP3 · ${kbps} kbps`;
 }

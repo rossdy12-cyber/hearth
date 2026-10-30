@@ -184,6 +184,26 @@ Download and install the newest build the same way. Your sign-ins are kept.
 
 ---
 
+## Music quality (FLAC / lossless)
+
+Settings has a **Music quality** choice:
+
+| Option | What you get |
+|---|---|
+| **Original (lossless)** | Your files exactly as they are. FLAC stays FLAC, including 24-bit/96 kHz and 192 kHz. About 1–1.5 MB per minute for CD quality, more for hi-res. |
+| **320 / 256 / 192 / 128 kbps** | Navidrome converts the song to MP3 at that bitrate. Much less data. An MP3 that's already at or below that bitrate is sent as it is. |
+
+- **On the iPhone** you set **Wi-Fi** and **mobile data** separately. The defaults are Original on Wi-Fi and 256 kbps on mobile data.
+- **On Windows/Ubuntu** there is one setting, defaulting to Original.
+- **Timing:** a change applies from the next song.
+- **Format badge:** the player shows what is actually streaming, e.g. **FLAC · 24-bit/44.1 kHz**, **MP3 · 320 kbps**, or **MP3 · 256 kbps (from FLAC)**.
+- **Formats the device can't play** (e.g. Opus or OGG on the iPhone) are always converted to 320 kbps MP3, even on Original.
+- **Automatic fallback:** if a device ever fails to play an original file, Hearth retries the same song as 320 kbps MP3, and the badge shows that.
+- **Hi-res on iPhone:** iPhones have no built-in hi-res output. 96/192 kHz FLAC plays, but iOS converts it down for the phone's speaker, Bluetooth or AirPods. Original is still worth it for CD-quality FLAC; for hi-res files the difference is mostly file size.
+- **First song slow to start:** if the NAS has spun its disks down, the first song can take several seconds to begin.
+
+---
+
 ## Play on… (use the iPhone as a remote)
 
 The iPhone can start a film or episode on Hearth for Windows/Ubuntu and then work as its remote. It goes through Jellyfin, so both devices just need to be signed in to the **same Jellyfin server**.

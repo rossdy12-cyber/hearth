@@ -23,6 +23,8 @@ final class AudioPlayer: ObservableObject {
     @Published private(set) var index = 0
     @Published private(set) var isPlaying = false
     @Published var showNowPlaying = false
+    /// What is streaming right now, e.g. "FLAC · 24-bit/44.1 kHz".
+    @Published private(set) var streamDescription = ""
     let clock = PlaybackClock()
 
     var client: SubsonicClient?
@@ -33,6 +35,7 @@ final class AudioPlayer: ObservableObject {
     private var timeObserver: Any?
     private var endObserver: NSObjectProtocol?
     private var rateObservation: NSKeyValueObservation?
+    private var itemStatusObservation: NSKeyValueObservation?
 
     var current: SubsonicSong? {
         queue.indices.contains(index) ? queue[index] : nil
@@ -133,6 +136,8 @@ final class AudioPlayer: ObservableObject {
         showNowPlaying = false
         clock.elapsed = 0
         clock.duration = 0
+        streamDescription = ""
+        itemStatusObservation = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
@@ -144,10 +149,30 @@ final class AudioPlayer: ObservableObject {
         try? session.setActive(true)
     }
 
-    private func loadCurrent() {
-        guard let song = current, let client, let url = client.streamURL(for: song) else { return }
+    /// Wi-Fi or mobile-data quality from Settings, depending on the current connection.
+    private var currentMaxBitRate: Int? {
+        NetworkMonitor.shared.isExpensive
+            ? MusicQuality.stored(MusicQuality.cellularKey, default: MusicQuality.defaultCellular).maxBitRate
+            : MusicQuality.stored(MusicQuality.wifiKey, default: MusicQuality.defaultWifi).maxBitRate
+    }
+
+    private func loadCurrent(forceBitRate: Int? = nil) {
+        guard let song = current, let client else { return }
+        let maxBitRate = forceBitRate ?? currentMaxBitRate
+        guard let url = client.streamURL(for: song, maxBitRate: maxBitRate) else { return }
         activateSession()
-        player.replaceCurrentItem(with: AVPlayerItem(url: url))
+        let item = AVPlayerItem(url: url)
+        streamDescription = SubsonicClient.streamDescription(for: song, maxBitRate: maxBitRate)
+        // If this iPhone can't play the original file, retry the same song as 320 kbps MP3.
+        let triedConversion = SubsonicClient.conversionBitRate(for: song, maxBitRate: maxBitRate) != nil
+        let songId = song.id
+        itemStatusObservation = item.observe(\.status, options: [.new]) { observed, _ in
+            guard observed.status == .failed else { return }
+            Task { @MainActor in
+                AudioPlayer.shared.itemFailed(songId: songId, triedConversion: triedConversion)
+            }
+        }
+        player.replaceCurrentItem(with: item)
         clock.elapsed = 0
         clock.duration = Double(song.duration ?? 0)
         player.play()
@@ -156,6 +181,15 @@ final class AudioPlayer: ObservableObject {
         loadArtwork(for: song, client: client)
         Task {
             await client.scrobble(song.id, submission: false)
+        }
+    }
+
+    private func itemFailed(songId: String, triedConversion: Bool) {
+        guard current?.id == songId else { return }
+        if triedConversion {
+            next()
+        } else {
+            loadCurrent(forceBitRate: 320)
         }
     }
 

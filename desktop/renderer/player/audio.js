@@ -1,4 +1,5 @@
 // Music queue for Navidrome, with media keys and OS media controls via the Media Session API.
+import { conversionBitRate, savedMusicQuality, streamFormat } from '../api/subsonic.js';
 
 export class AudioPlayer extends EventTarget {
   constructor() {
@@ -8,6 +9,9 @@ export class AudioPlayer extends EventTarget {
     this.override = null;
     this.queue = [];
     this.index = 0;
+    /** What is streaming now, e.g. "FLAC · 24-bit/44.1 kHz". */
+    this.streamDescription = '';
+    this.triedConversion = false;
     this.el = new Audio();
     this.el.preload = 'auto';
     const savedVolume = Number(localStorage.getItem('hearth.volume'));
@@ -27,7 +31,10 @@ export class AudioPlayer extends EventTarget {
       this.next();
     });
     this.el.addEventListener('error', () => {
-      if (this.current) this.emit('error');
+      if (!this.current || !this.el.getAttribute('src')) return;
+      // The original file wouldn't play here: try the same song converted to MP3 first.
+      if (!this.triedConversion) this.load(320);
+      else this.emit('error');
     });
 
     this.setUpMediaKeys();
@@ -66,10 +73,14 @@ export class AudioPlayer extends EventTarget {
     this.load();
   }
 
-  load() {
+  /** forceBitRate retries a song converted to MP3 when the original file won't play. */
+  load(forceBitRate = null) {
     const song = this.current;
     if (!song || !this.client) return;
-    this.el.src = this.client.streamURL(song);
+    const maxBitRate = forceBitRate ?? savedMusicQuality().maxBitRate;
+    this.triedConversion = conversionBitRate(song, maxBitRate) !== null;
+    this.streamDescription = streamFormat(song, maxBitRate);
+    this.el.src = this.client.streamURL(song, maxBitRate);
     this.el.play().catch(() => {});
     this.client.scrobble(song.id, false);
     this.changed();

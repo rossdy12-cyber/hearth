@@ -200,7 +200,7 @@ const nowPlaying = document.getElementById('now-playing');
 bar.innerHTML = `
   <div class="pb-left" data-player="open">
     <div class="pb-art"><span class="img-box"><span class="img-fallback"></span><img id="pb-cover" alt=""></span></div>
-    <div class="pb-text"><div id="pb-title" class="pb-title"></div><div id="pb-artist" class="pb-artist"></div></div>
+    <div class="pb-text"><div id="pb-title" class="pb-title"></div><div id="pb-artist" class="pb-artist"></div><div id="pb-format" class="pb-format"></div></div>
   </div>
   <div class="pb-center">
     <div class="pb-buttons">
@@ -230,6 +230,7 @@ nowPlaying.innerHTML = `
         <div class="eyebrow">Now playing</div>
         <h1 id="np-title"></h1>
         <div id="np-artist" class="np-artist"></div>
+        <div id="np-format" class="format-badge"></div>
       </div>
     </div>
     <div class="np-queue">
@@ -294,6 +295,8 @@ audio.addEventListener('change', () => {
     closeNowPlaying();
     return;
   }
+  el('np-format').textContent = audio.streamDescription;
+  el('pb-format').textContent = audio.streamDescription;
   const cover = state.nd?.coverURL(song.coverArt, 300);
   if (bar.dataset.songId !== song.id) {
     bar.dataset.songId = song.id;

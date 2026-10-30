@@ -2,6 +2,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(MusicQuality.wifiKey) private var wifiQuality = MusicQuality.defaultWifi.rawValue
+    @AppStorage(MusicQuality.cellularKey) private var cellularQuality = MusicQuality.defaultCellular.rawValue
 
     private var version: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -26,6 +28,19 @@ struct SettingsView: View {
                     Label("Navidrome: music", systemImage: "music.note")
                 } footer: {
                     Text("The address you open Navidrome with in a browser, for example http://100.x.x.x:4533.")
+                }
+
+                Section {
+                    Picker("On Wi-Fi", selection: $wifiQuality) {
+                        ForEach(MusicQuality.allCases) { Text($0.label).tag($0.rawValue) }
+                    }
+                    Picker("On mobile data", selection: $cellularQuality) {
+                        ForEach(MusicQuality.allCases) { Text($0.label).tag($0.rawValue) }
+                    }
+                } header: {
+                    Label("Music quality", systemImage: "waveform")
+                } footer: {
+                    Text("Original plays your files as they are: FLAC stays lossless (about 1–1.5 MB per minute, more for hi-res). The kbps options are converted to MP3 by Navidrome and use much less data. Applies from the next song.")
                 }
 
                 Section("About") {
