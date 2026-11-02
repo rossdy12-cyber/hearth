@@ -193,7 +193,10 @@ Settings has a **Music quality** choice:
 | **Original (lossless)** | Your files exactly as they are. FLAC stays FLAC, including 24-bit/96 kHz and 192 kHz. About 1–1.5 MB per minute for CD quality, more for hi-res. |
 | **320 / 256 / 192 / 128 kbps** | Navidrome converts the song to MP3 at that bitrate. Much less data. An MP3 that's already at or below that bitrate is sent as it is. |
 
-- **On the iPhone** you set **Wi-Fi** and **mobile data** separately. The defaults are Original on Wi-Fi and 256 kbps on mobile data.
+- **On the iPhone** you set **Wi-Fi**, **mobile data** and **AirPods & Bluetooth** separately. The defaults are
+  Original on Wi-Fi, 256 kbps on mobile data and 320 kbps for Bluetooth. AirPods receive about 256 kbps AAC whatever is
+  streamed, so lossless gains nothing there, and a 24-bit/192 kHz FLAC (5–9 Mbps) can stutter. Hearth switches
+  automatically, mid-song, when headphones connect or disconnect, and keeps 30 seconds buffered for lossless streams.
 - **On Windows/Ubuntu** there is one setting, defaulting to Original.
 - **Timing:** a change applies from the next song.
 - **Format badge:** the player shows what is actually streaming, e.g. **FLAC · 24-bit/44.1 kHz**, **MP3 · 320 kbps**, or **MP3 · 256 kbps (from FLAC)**.

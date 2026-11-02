@@ -163,8 +163,12 @@ enum MusicQuality: String, CaseIterable, Identifiable, Sendable {
 
     static let wifiKey = "musicQuality.wifi"
     static let cellularKey = "musicQuality.cellular"
+    static let bluetoothKey = "musicQuality.bluetooth"
     static let defaultWifi = MusicQuality.original
     static let defaultCellular = MusicQuality.kbps256
+    /// AirPods and other Bluetooth headphones get AAC at about 256 kbps whatever is streamed, so a hi-res FLAC
+    /// (5–9 Mbps for 24-bit/192 kHz) only adds data and stutters.
+    static let defaultBluetooth = MusicQuality.kbps320
 
     static func stored(_ key: String, default fallback: MusicQuality) -> MusicQuality {
         UserDefaults.standard.string(forKey: key).flatMap(MusicQuality.init(rawValue:)) ?? fallback

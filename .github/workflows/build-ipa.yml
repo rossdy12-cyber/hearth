@@ -2,7 +2,7 @@ name: Build unsigned IPA
 
 on:
   push:
-    branches: [main]
+    branches: [main, "claude/**"]
     paths-ignore:
       - "desktop/**"
       - ".github/workflows/build-desktop.yml"
