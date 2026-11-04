@@ -36,6 +36,9 @@ final class AudioPlayer: ObservableObject {
     private var endObserver: NSObjectProtocol?
     private var rateObservation: NSKeyValueObservation?
     private var itemStatusObservation: NSKeyValueObservation?
+    private var routeObserver: NSObjectProtocol?
+    /// The bitrate limit the current song was loaded with (nil = original file).
+    private var loadedMaxBitRate: Int??
 
     var current: SubsonicSong? {
         queue.indices.contains(index) ? queue[index] : nil
@@ -58,6 +61,11 @@ final class AudioPlayer: ObservableObject {
             let playing = observed.timeControlStatus != .paused
             Task { @MainActor in
                 AudioPlayer.shared.playingChanged(playing)
+            }
+        }
+        routeObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in
+                AudioPlayer.shared.outputChanged()
             }
         }
         setUpRemoteCommands()
@@ -149,19 +157,37 @@ final class AudioPlayer: ObservableObject {
         try? session.setActive(true)
     }
 
-    /// Wi-Fi or mobile-data quality from Settings, depending on the current connection.
+    /// True when the sound is going to AirPods or other Bluetooth headphones/speakers.
+    private static var isBluetoothOutput: Bool {
+        let bluetooth: Set<AVAudioSession.Port> = [.bluetoothA2DP, .bluetoothLE, .bluetoothHFP]
+        return AVAudioSession.sharedInstance().currentRoute.outputs.contains { bluetooth.contains($0.portType) }
+    }
+
+    /// Bluetooth, Wi-Fi or mobile-data quality from Settings, depending on where the sound goes and the connection.
     private var currentMaxBitRate: Int? {
-        NetworkMonitor.shared.isExpensive
+        if Self.isBluetoothOutput {
+            return MusicQuality.stored(MusicQuality.bluetoothKey, default: MusicQuality.defaultBluetooth).maxBitRate
+        }
+        return NetworkMonitor.shared.isExpensive
             ? MusicQuality.stored(MusicQuality.cellularKey, default: MusicQuality.defaultCellular).maxBitRate
             : MusicQuality.stored(MusicQuality.wifiKey, default: MusicQuality.defaultWifi).maxBitRate
     }
 
-    private func loadCurrent(forceBitRate: Int? = nil) {
+    /// AirPods connected or disconnected: switch to that output's quality, carrying on from the same point.
+    private func outputChanged() {
+        guard current != nil, player.currentItem != nil, let loaded = loadedMaxBitRate, loaded != currentMaxBitRate else { return }
+        loadCurrent(startAt: clock.elapsed, autoplay: isPlaying)
+    }
+
+    private func loadCurrent(forceBitRate: Int? = nil, startAt: Double = 0, autoplay: Bool = true) {
         guard let song = current, let client else { return }
         let maxBitRate = forceBitRate ?? currentMaxBitRate
         guard let url = client.streamURL(for: song, maxBitRate: maxBitRate) else { return }
+        loadedMaxBitRate = .some(maxBitRate)
         activateSession()
         let item = AVPlayerItem(url: url)
+        // Lossless files are big: keep more buffered so a dip in the connection doesn't stutter.
+        item.preferredForwardBufferDuration = maxBitRate == nil ? 30 : 0
         streamDescription = SubsonicClient.streamDescription(for: song, maxBitRate: maxBitRate)
         // If this iPhone can't play the original file, retry the same song as 320 kbps MP3.
         let triedConversion = SubsonicClient.conversionBitRate(for: song, maxBitRate: maxBitRate) != nil
@@ -173,14 +199,22 @@ final class AudioPlayer: ObservableObject {
             }
         }
         player.replaceCurrentItem(with: item)
-        clock.elapsed = 0
+        clock.elapsed = startAt
         clock.duration = Double(song.duration ?? 0)
-        player.play()
-        isPlaying = true
+        if startAt > 0 {
+            player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600))
+        }
+        if autoplay {
+            player.play()
+        }
+        isPlaying = autoplay
         updateNowPlaying()
         loadArtwork(for: song, client: client)
-        Task {
-            await client.scrobble(song.id, submission: false)
+        // A quality switch part-way through isn't a new play.
+        if startAt == 0 {
+            Task {
+                await client.scrobble(song.id, submission: false)
+            }
         }
     }
 
