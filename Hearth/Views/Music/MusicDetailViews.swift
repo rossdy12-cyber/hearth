@@ -222,7 +222,9 @@ struct AllArtistsView: View {
             .listRowBackground(Theme.background)
         }
         .listStyle(.plain)
+        #if !os(tvOS)
         .scrollContentBackground(.hidden)
+        #endif
         .background(Theme.background.ignoresSafeArea())
         .searchable(text: $filter, prompt: "Filter artists")
         .navigationTitle("Artists")
