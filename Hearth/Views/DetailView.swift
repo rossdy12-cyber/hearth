@@ -28,7 +28,9 @@ struct DetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        #if !os(tvOS)
         .toolbarBackground(.hidden, for: .navigationBar)
+        #endif
     }
 
     private func content(_ client: JellyfinClient) -> some View {

@@ -35,8 +35,12 @@ struct SearchView: View {
                 .padding(.vertical, 12)
             }
             .background(Theme.background.ignoresSafeArea())
+            #if os(tvOS)
+            .searchable(text: $query, prompt: "Movies, shows, artists, songs")
+            #else
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Movies, shows, artists, songs")
+            #endif
             .autocorrectionDisabled()
             .task(id: query) {
                 await search()

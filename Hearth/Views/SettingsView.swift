@@ -78,7 +78,10 @@ struct AccountForm: View {
     init(service: Service) {
         self.service = service
         let key = service == .jellyfin ? "lastJellyfinURL" : "lastNavidromeURL"
-        _server = State(initialValue: UserDefaults.standard.string(forKey: key) ?? "")
+        let defaultURL = service == .jellyfin ? "http://100.64.0.4:30013" : "http://100.64.0.4:30043"
+        let stored = UserDefaults.standard.string(forKey: key) ?? ""
+        _server = State(initialValue: stored.isEmpty ? defaultURL : stored)
+        _username = State(initialValue: "ross")
     }
 
     private var signedIn: (server: String, user: String)? {

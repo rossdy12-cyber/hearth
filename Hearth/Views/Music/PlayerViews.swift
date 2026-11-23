@@ -38,6 +38,14 @@ struct MiniPlayer: View {
                             .frame(width: 40, height: 40)
                     }
                     .accessibilityLabel("Next track")
+                    Button {
+                        audio.showNowPlaying = true
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.subheadline)
+                            .frame(width: 40, height: 40)
+                    }
+                    .accessibilityLabel("Open Now Playing")
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
@@ -207,6 +215,11 @@ private struct Scrubber: View {
 
     var body: some View {
         VStack(spacing: 4) {
+            #if os(tvOS)
+            ProgressBar(value: clock.fraction)
+                .frame(height: 6)
+                .clipShape(Capsule())
+            #else
             Slider(
                 value: Binding(
                     get: { isDragging ? dragValue : clock.elapsed },
@@ -224,6 +237,7 @@ private struct Scrubber: View {
                 }
             )
             .tint(Theme.accent)
+            #endif
             HStack {
                 Text(formatTime(isDragging ? dragValue : clock.elapsed))
                 Spacer()

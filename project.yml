@@ -5,6 +5,7 @@ options:
   bundleIdPrefix: app.hearth
   deploymentTarget:
     iOS: "16.0"
+    tvOS: "17.0"
   createIntermediateGroups: true
 
 settings:
@@ -54,6 +55,43 @@ targets:
         UIBackgroundModes:
           - audio
         # The servers are reached over Tailscale on plain http.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsArbitraryLoadsForMedia: true
+          NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: Hearth connects to your own Jellyfin and Navidrome servers.
+
+  HearthTV:
+    type: application
+    platform: tvOS
+    sources:
+      - path: Hearth
+    settings:
+      base:
+        PRODUCT_NAME: HearthTV
+        PRODUCT_BUNDLE_IDENTIFIER: app.hearth.mediahub.tv
+        TARGETED_DEVICE_FAMILY: "3"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIconTV
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
+        DEVELOPMENT_TEAM: ""
+    info:
+      path: Hearth/InfoTV.plist
+      properties:
+        CFBundleDisplayName: Hearth TV
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIUserInterfaceStyle: Dark
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIBackgroundModes:
+          - audio
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
           NSAllowsArbitraryLoadsForMedia: true

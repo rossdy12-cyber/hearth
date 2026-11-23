@@ -14,19 +14,36 @@ enum Theme {
         tabBar.configureWithOpaqueBackground()
         tabBar.backgroundColor = UIColor(white: 0.04, alpha: 1)
         UITabBar.appearance().standardAppearance = tabBar
+        #if !os(tvOS)
         UITabBar.appearance().scrollEdgeAppearance = tabBar
+        #endif
 
         let navBar = UINavigationBarAppearance()
         navBar.configureWithOpaqueBackground()
         navBar.backgroundColor = .black
         navBar.shadowColor = .clear
         navBar.titleTextAttributes = [.foregroundColor: UIColor.white]
+        #if !os(tvOS)
         navBar.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        #endif
         UINavigationBar.appearance().standardAppearance = navBar
+        #if !os(tvOS)
         UINavigationBar.appearance().compactAppearance = navBar
         UINavigationBar.appearance().scrollEdgeAppearance = navBar
+        #endif
     }
 }
+
+#if os(tvOS)
+enum TVNavigationBarTitleDisplayMode {
+    case automatic, inline, large
+}
+extension View {
+    func navigationBarTitleDisplayMode(_ mode: TVNavigationBarTitleDisplayMode) -> some View {
+        self
+    }
+}
+#endif
 
 struct HearthLogo: View {
     var body: some View {
@@ -50,10 +67,12 @@ struct HearthChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            #if !os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.black, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     HearthLogo()

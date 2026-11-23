@@ -25,7 +25,36 @@ jobs:
       - name: Generate the Xcode project
         run: xcodegen generate
 
-      - name: Build the app (no code signing)
+      - name: Build Hearth TV (tvOS appletvos, no code signing)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Hearth.xcodeproj \
+            -target HearthTV \
+            -configuration Release \
+            -sdk appletvos \
+            SYMROOT="$PWD/build" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package Payload/HearthTV.app into HearthTV.ipa
+        run: |
+          mkdir -p out_tv/Payload
+          cp -R build/Release-appletvos/HearthTV.app out_tv/Payload/
+          cd out_tv
+          zip -qry HearthTV.ipa Payload
+          ls -lh HearthTV.ipa
+
+      - name: Upload HearthTV.ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: HearthTV-ipa
+          path: out_tv/HearthTV.ipa
+          retention-days: 30
+
+      - name: Build the iOS app (no code signing)
         run: |
           set -o pipefail
           xcodebuild \

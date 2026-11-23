@@ -254,6 +254,11 @@ struct RemoteControlView: View {
 
     private var scrubber: some View {
         VStack(spacing: 4) {
+            #if os(tvOS)
+            ProgressBar(value: duration > 0 ? min(1, max(0, position / duration)) : 0)
+                .frame(height: 6)
+                .clipShape(Capsule())
+            #else
             Slider(
                 value: Binding(get: { scrubbing ? scrubValue : min(position, max(duration, 1)) }, set: { scrubValue = $0 }),
                 in: 0...max(duration, 1),
@@ -269,6 +274,7 @@ struct RemoteControlView: View {
                 }
             )
             .tint(Theme.accent)
+            #endif
             HStack {
                 Text(formatTime(scrubbing ? scrubValue : position))
                 Spacer()
@@ -338,6 +344,21 @@ struct RemoteControlView: View {
                     .frame(width: 32)
             }
             .accessibilityLabel("Mute")
+            #if os(tvOS)
+            Button("-5%") {
+                volume = max(0, volume - 5)
+                let level = String(Int(volume))
+                perform { try await client.sendCommand(sessionId: $0, "SetVolume", arguments: ["Volume": level]) }
+            }
+            ProgressBar(value: min(1, max(0, volume / 100.0)))
+                .frame(height: 6)
+                .clipShape(Capsule())
+            Button("+5%") {
+                volume = min(100, volume + 5)
+                let level = String(Int(volume))
+                perform { try await client.sendCommand(sessionId: $0, "SetVolume", arguments: ["Volume": level]) }
+            }
+            #else
             Slider(value: $volume, in: 0...100, onEditingChanged: { editing in
                 editingVolume = editing
                 if !editing {
@@ -346,6 +367,7 @@ struct RemoteControlView: View {
                 }
             })
             .tint(Theme.accent)
+            #endif
         }
     }
 

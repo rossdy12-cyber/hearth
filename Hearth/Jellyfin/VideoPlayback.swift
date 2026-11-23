@@ -14,6 +14,7 @@ final class HearthPlayerViewController: AVPlayerViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        #if !os(tvOS)
         var config = UIButton.Configuration.filled()
         config.title = "Play on…"
         config.image = UIImage(systemName: "tv")
@@ -31,6 +32,7 @@ final class HearthPlayerViewController: AVPlayerViewController {
             button.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
             button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8)
         ])
+        #endif
     }
 
     override func viewDidDisappear(_ animated: Bool) {
