@@ -10,24 +10,20 @@ enum Theme {
 
     @MainActor
     static func applyUIKitAppearance() {
+        #if !os(tvOS)
         let tabBar = UITabBarAppearance()
         tabBar.configureWithOpaqueBackground()
         tabBar.backgroundColor = UIColor(white: 0.04, alpha: 1)
         UITabBar.appearance().standardAppearance = tabBar
-        #if !os(tvOS)
         UITabBar.appearance().scrollEdgeAppearance = tabBar
-        #endif
 
         let navBar = UINavigationBarAppearance()
         navBar.configureWithOpaqueBackground()
         navBar.backgroundColor = .black
         navBar.shadowColor = .clear
         navBar.titleTextAttributes = [.foregroundColor: UIColor.white]
-        #if !os(tvOS)
         navBar.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-        #endif
         UINavigationBar.appearance().standardAppearance = navBar
-        #if !os(tvOS)
         UINavigationBar.appearance().compactAppearance = navBar
         UINavigationBar.appearance().scrollEdgeAppearance = navBar
         #endif
